@@ -1,2 +1,0 @@
-# Fetch-interview-exercise
-SQL
