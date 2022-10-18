@@ -1,0 +1,142 @@
+/*
+SECOND: WRITE A QUERY THAT DIRECTLY ANSWERS A PREDETERMINED QUESTION FROM A BUSINESS STAKEHOLDER
+*/
+
+1.
+select B.name
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where B.topBrand = 'true'
+and dateScanned >= sysdate - 30
+and  where B.brandID = (
+  select B.brandID, count(B.brandID) as brandCounter
+  from receipts R
+  left join Users U on R.userID = U._id
+  left join Brands B on R.BrandID = B._id
+  where B.topBrand = 'true'
+  and dateScanned >= sysdate - 30
+  group by B.BrandID
+  order by brandcounter desc
+  limit 5
+)
+
+
+
+2.
+select B.name
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where B.topBrand = 'true'
+and dateScanned <= sysdate - 30
+and dateScanned >= sysdate - 60
+and  where B.brandID = (
+  select B.brandID, count(B.brandID) as brandCounter
+  from receipts R
+  left join Users U on R.userID = U._id
+  left join Brands B on R.BrandID = B._id
+  where B.topBrand = 'true'
+  and dateScanned <= sysdate - 30
+  and dateScanned >= sysdate - 60
+  group by B.BrandID
+  order by brandCounter desc
+  limit 5
+)
+
+
+3.
+
+select avg(totalSpent)
+from receipts
+where rewardsReceiptStatus = 'Accepted'
+
+
+select avg(totalSpent)
+from receipts
+where rewardsReceiptStatus = 'Rejected'
+
+
+4.
+select count(purchasedItemCount)
+from receipts
+where rewardsReceiptStatus = 'Accepted'
+
+
+select count(purchasedItemCount)
+from receipts
+where rewardsReceiptStatus = 'Rejected'
+
+
+5.
+select B.name
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where U.createdDate >= sysdate - 180
+and where B.brandID = (
+  select B.brandID, sum(totalSpent) as brandSpending
+  from receipts R
+  left join Users U on R.userID = U._id
+  left join Brands B on R.BrandID = B._id
+  where U.createdDate >= sysdate - 180
+  group by B.BrandID
+  order by brandSpending desc
+  limit 1
+)
+
+
+
+6.
+select B.name
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where U.createdDate >= sysdate - 180
+and where B.brandID = (
+  select B.brandID, count(brandID) as brandCounter
+  from receipts R
+  left join Users U on R.userID = U._id
+  left join Brands B on R.BrandID = B._id
+  where U.createdDate >= sysdate - 180
+  group by B.BrandID
+  order by brandCounter desc
+  limit 1
+)
+
+---THIRD: EVALUATE DATA QUALITY ISSUES IN THE DATA PROVIDED
+/*
+finds all receipts with null values, there should not be any receipts without an ID and we can do this with
+every table including Users, and Brands.
+*/
+select *
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where R._id is null
+
+
+/*
+find duplicate receipts, primary key ID should never have duplicate.
+You can also change up the ID to the Users and Brands ID to find duplicate for Users and Brands
+*/
+select R._id, count(R._id)
+from receipts R
+left join Users U on R.userID = U._id
+left join Brands B on R.BrandID = B._id
+where count(R.id) > 1
+group by R._id
+
+
+
+/* FOURTH: COMMUNICATE WITH STAKEHOLDERS
+Hi Product Owner Jim,
+We had a few issues with the receipts data we have been reviewing.
+Are there special cases when multiple same receipts are uploaded to the fetch app?  We did a count of all receipts
+with the same IDs and came up with a list of receipts that are duplicates.  Is there a special business reason for the
+duplicate occurring or are there any reasons the same receipt be uploaded to our app?  Is there any other way to identify the
+original vs the duplicate receipt? If there is not a way to identify one from the other and/or the receipts are exactly the same, we can
+keep 1 and remove the rest of the duplicates. At this time we see no scaling concerns but to eliminate any risk of performance issues
+we can run the removal of duplicates at 2am so users impacted from the update will be minimal.
+
+*/
